@@ -1,7 +1,8 @@
 import logging
+import webbrowser
 from pathlib import Path
 
-from pyroll.core import Profile, PassSequence, RollPass, Roll, CircularOvalGroove, Transport, RoundGroove
+from pyroll.core import Profile, PassSequence, RollPass, Roll, CircularOvalGroove, FalseRoundGroove
 
 
 def test_solve(tmp_path: Path, caplog):
@@ -9,48 +10,45 @@ def test_solve(tmp_path: Path, caplog):
 
     import pyroll.byon_lee_wear_model
 
-    in_profile = Profile.round(
-        diameter=30e-3,
-        temperature=1200 + 273.15,
+    in_profile = Profile.from_groove(
+        groove=FalseRoundGroove(
+            flank_angle=60,
+            r1=0.2e-3,
+            r2=10.3e-3,
+            depth=8.7e-3
+        ),
+        gap=2.1e-3,
+        filling=20.7 / 21.94,
+        temperature=1100 + 273.15,
         strain=0,
-        material=["C45", "steel"],
-        flow_stress=100e6,
+        material=["steel"],
         density=7.5e3,
-        thermal_capacity=690,
+        flow_stress=100e6,
+        specific_heat_capacity=690,
+        thermal_conductivity=23
     )
 
-    sequence = PassSequence([
-        RollPass(
-            label="Oval I",
-            roll=Roll(
-                groove=CircularOvalGroove(
-                    depth=8e-3,
-                    r1=6e-3,
-                    r2=40e-3
+    sequence = PassSequence(
+        [
+            RollPass(
+                label="Oval Groove",
+                orientation="h",
+                roll=Roll(
+                    groove=CircularOvalGroove(
+                        depth=4.5e-3,
+                        r1=1e-3,
+                        r2=20e-3,
+                    ),
+                    nominal_diameter=208e-3,
+                    shore_hardness=84
                 ),
-                nominal_radius=160e-3,
-                rotational_frequency=1
+                velocity=11.7,
+                gap=3.5e-3,
+                coulomb_friction_coefficient=0.4,
+                rolled_billets=2000,
             ),
-            gap=2e-3,
-        ),
-        Transport(
-            label="I => II",
-            duration=1
-        ),
-        RollPass(
-            label="Round II",
-            roll=Roll(
-                groove=RoundGroove(
-                    r1=1e-3,
-                    r2=12.5e-3,
-                    depth=11.5e-3
-                ),
-                nominal_radius=160e-3,
-                rotational_frequency=1
-            ),
-            gap=2e-3,
-        ),
-    ])
+        ]
+    )
 
     try:
         sequence.solve(in_profile)
@@ -58,5 +56,13 @@ def test_solve(tmp_path: Path, caplog):
         print("\nLog:")
         print(caplog.text)
 
-    assert sequence.in_profile.new_hook == 42
-    assert sequence.out_profile.new_hook == 42
+    try:
+        import pyroll.report
+
+        report = pyroll.report.report(sequence)
+        f = tmp_path / "report.html"
+        f.write_text(report, encoding="utf-8")
+        webbrowser.open(f.as_uri())
+
+    except ImportError:
+        pass
