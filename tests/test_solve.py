@@ -7,7 +7,7 @@ from pyroll.core import Profile, PassSequence, RollPass, Roll, CircularOvalGroov
 def test_solve(tmp_path: Path, caplog):
     caplog.set_level(logging.DEBUG, logger="pyroll")
 
-    import pyroll.sample_plugin
+    import pyroll.byon_lee_wear_model
 
     in_profile = Profile.round(
         diameter=30e-3,
