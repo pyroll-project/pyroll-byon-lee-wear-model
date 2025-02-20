@@ -1,48 +1,74 @@
-%! Author = maxwe
-%! Date = 10.03.22
-
 % Preamble
 \documentclass[11pt]{PyRollDocs}
+\usepackage{pythontex}
 
 \addbibresource{refs.bib}
-
 % Document
 \begin{document}
 
-    \title{The ... PyRoll Plugin}
-    \author{Your Name}
+    \title{The Byon Lee Wear Model PyRolL Plugin}
+    \author{Christoph Renzing}
     \date{\today}
 
     \maketitle
 
-    Document your plugin here.
+    The \emph{Byon Lee Wear Model} Plugin implements a wear model for the oval - round - oval groove series.
+    The model was published by Byon et al.~\cite{Byon2007, Byon2008, Byon2008a} a focuses solely on the mechanical and geometrical factors are considered.
+    Metallurgical influences like corrosion or thermal fatigue are neglected.
+    The main parameters that are considered are:
 
+    \begin{description}
+        \item[$F_{R}$] Roll Force
+        \item[$L_{d}$] Contact Length
+        \item[$H_{s}$] Shore Hardness
+        \item[$N_{b}$] Number of rolled billets
+    \end{description}
 
-    \section{Model approach}\label{sec:model-approach}
+    The key difference between other models like the Wear model of e.g. Archard, is that the proposed model also allows to calculate the resulting wear contour.
+    Byon et al. therefore assumes, that for round grooves, the wear contour takes a parablic form.
+    The wear radius for oval grooves is calculated using the following \autoref{eq:1}:
 
-    Some model equations~\cite{article1}:
+    \begin{equation}
+        R_{w,g} = R_2 \cdot J_w + R_{p, 0} \cdot \left( 1 - J_w \right)
+        \label{eq:1}
+    \end{equation}
 
-    \[
-        a^2 + b^2 = c^2
-    \]
+    In this equation, $R{w,g}$ is the worn radius of the groove profile.
+    $R_2$ is the second radius of the oval groove, $J_w$ is a weight function introduced by Byon et al..
+    $R_{p, 0}$ is the radius of the incoming round profile.
+
+    The weight function $J_w$ for oval grooves is calculated as:
+
+    \begin{equation}
+        J_w = 1 - \kappa \cdot \left( \frac{F_R^2 \cdot L_d \cdot N_b}{H_s} \right)
+        \label{eq:2}
+    \end{equation}
+
+    The derivation of the equation can be found in the author's original publication~\cite{Byon2008a}.
+    Further, the authors provide a formula to calculate the offset of the wear profile from the initial groove contour.
+    The implementation of this part was neglected due to usage of the \emph{shapely} python package witch allows for direct fitting of the contour to the desired points.
+    These points are the so-called detachment or separation points, witch mark the point were the profile detaches from the original groove.\\
+    As for round grooves, the used equations are:
+
+    \begin{equation}
+        R_{w,g} = R_2 \cdot J_w + 0.75 \cdot R_{b} \cdot \left( 1 - J_w \right)
+        \label{eq:3}
+    \end{equation}
+
+    In this equation $R_b$ is the bulge radius of the incoming oval profile.
+    This bulge radius can be calculated can be calculated according to the model of \textcite{Schmidt2017}, \textcite{Byon2017} or \textcite{Lee2001a}.
+    To calculate the weight \autoref{eq:2} is used.
+    The correction coefficients $\kappa$ were measured by the autor from various rolling trials.
+    For round - oval passes the value is $\kappa = 19.6e-12$ and for oval - round passes $\kappa =  35.9e-12$.
+    Further, for round - oval roll passes the value $0.75$ is a empirical coefficient as stated by the original author.
 
 
     \section{Usage instructions}\label{sec:usage-instructions}
 
-    Shell command code blocks:
+    The plugin can be loaded under the name \py/pyroll.byon-lee-wear-model/.
+    The functionality of the plugin should need the following values to operate: \py/RollPass.Roll.shore_hardness/ for the shore hardness of the roll material and \py/RollPass.rolled_billets/ a integer number of rolled billets.
 
-    %! language = Shell Script
-    \begin{minted}{shell}
-pyroll input-py solve report
-    \end{minted}
 
-    Python code blocks:
-
-    %! language = Python
-    \begin{minted}{python}
-        def python_function():
-            return None
-    \end{minted}
 
     \printbibliography
 
