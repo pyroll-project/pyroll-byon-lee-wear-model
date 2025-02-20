@@ -9,6 +9,7 @@ def test_solve(tmp_path: Path, caplog):
     caplog.set_level(logging.DEBUG, logger="pyroll")
 
     import pyroll.byon_lee_wear_model
+    import pyroll.profile_bulging
 
     in_profile = Profile.from_groove(
         groove=FalseRoundGroove(
