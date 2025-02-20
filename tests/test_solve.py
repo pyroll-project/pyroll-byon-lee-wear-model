@@ -45,7 +45,7 @@ def test_solve(tmp_path: Path, caplog):
                 velocity=11.7,
                 gap=3.5e-3,
                 coulomb_friction_coefficient=0.4,
-                rolled_billets=2000,
+                rolled_billets=20000,
             ),
         ]
     )

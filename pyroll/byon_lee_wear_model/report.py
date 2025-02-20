@@ -1,36 +1,28 @@
-import numpy as np
+from matplotlib import pyplot as plt
 
 from pyroll.report import hookimpl
 from pyroll.core import RollPass, Unit
-
-from matplotlib import pyplot as plt
-from shapely.geometry.multipoint import MultiPoint
-from shapely.geometry.point import Point
 
 
 @hookimpl
 def unit_plot(unit: Unit):
     """Plot wear contour for one groove of roll pass contour."""
     if isinstance(unit, RollPass):
-        detachment_points: MultiPoint = MultiPoint([Point(unit.out_profile.contact_lines.geoms[0].coords[0]),
-                                                    Point(unit.out_profile.contact_lines.geoms[0].coords[-1])])
-        z_coordinates_wear_contour = np.arange(start=detachment_points.geoms[0].x, stop=detachment_points.geoms[1].x,
-                                               step=1e-6)
-
-        def wear_contour(coordinate):
-            return np.sqrt(unit.wear_radius ** 2 - coordinate ** 2)
-
-        y_coordinates_wear_contour = wear_contour(z_coordinates_wear_contour)
-        minimum_wear_distance = min(y_coordinates_wear_contour)
-        shift_contour = y_coordinates_wear_contour - minimum_wear_distance + detachment_points.geoms[0].y
-
-        fig: plt.Figure = plt.figure(constrained_layout=True, figsize=(4, 4))
-        ax: plt.Axes = fig.subplots()
+        fig: plt.Figure = plt.figure(constrained_layout=True, figsize=(6, 4))
+        ax: plt.Axes
+        axl: plt.Axes
+        ax, axl = fig.subplots(nrows=2, height_ratios=[1, 0.3])
+        ax.set_title("Groove Wear Analysis")
 
         ax.set_aspect("equal", "datalim")
         ax.grid(lw=0.5)
-        plt.title("Lendl Areas and Boundaries")
-        ax.plot(*unit.contour_lines.geoms[0].xy, color="k")
-        ax.plot(y_coordinates_wear_contour, shift_contour, color='C1', ls='--')
+
+        roll_surface = ax.plot(*unit.contour_lines.geoms[0].xy, color="k", label="roll surface")
+        wear_cross_section = ax.fill(*unit.roll.groove_wear_cross_section.boundary.xy, color="red", alpha=0.5, label="wear cross section")
+        wear_contour = ax.plot(*unit.roll.groove_wear_contour_line.xy, color='red', ls='--', label="wear contour")
+
+        axl.axis("off")
+        axl.legend(handles=roll_surface + wear_cross_section + wear_contour, ncols=3, loc="lower center")
+        fig.set_layout_engine('constrained')
 
         return fig
