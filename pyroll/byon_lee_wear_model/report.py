@@ -17,9 +17,13 @@ def unit_plot(unit: Unit):
         ax.set_aspect("equal", "datalim")
         ax.grid(lw=0.5)
 
-        roll_surface = ax.plot(*unit.contour_lines.geoms[0].xy, color="k", label="roll surface")
-        wear_cross_section = ax.fill(*unit.roll.groove_wear_cross_section.boundary.xy, color="red", alpha=0.5, label="wear cross section")
-        wear_contour = ax.plot(*unit.roll.groove_wear_contour_line.xy, color='red', ls='--', label="wear contour")
+        for wear_cl, cl, wear_poly in zip(unit.roll.groove_wear_contour_lines.geoms,
+                                          unit.contour_lines.geoms,
+                                          unit.roll.groove_wear_cross_section.geoms):
+            wear_contour = ax.plot(*wear_cl.xy, color='red', ls='--', label="wear contour")
+            roll_surface = ax.plot(*cl.xy, color="k", label="roll surface")
+            wear_cross_section = ax.fill(*wear_poly.boundary.xy, color="red", alpha=0.5,
+                                         label="wear cross section")
 
         axl.axis("off")
         axl.legend(handles=roll_surface + wear_cross_section + wear_contour, ncols=3, loc="lower center")

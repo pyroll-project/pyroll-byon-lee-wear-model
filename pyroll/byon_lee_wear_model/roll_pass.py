@@ -2,7 +2,10 @@ import numpy as np
 
 from pyroll.core.hooks import Hook
 from pyroll.core import SymmetricRollPass, root_hooks
+from shapely.affinity import translate, rotate
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry.multipolygon import MultiPolygon
 
 SymmetricRollPass.Roll.shore_hardness = Hook[float]()
 """Shore hardness of the roll material."""
@@ -19,7 +22,7 @@ SymmetricRollPass.rolled_billets = Hook[float]()
 SymmetricRollPass.Roll.wear_radius = Hook[float]()
 """Worn groove radius."""
 
-SymmetricRollPass.Roll.groove_wear_contour_line = Hook[LineString]()
+SymmetricRollPass.Roll.groove_wear_contour_lines = Hook[LineString]()
 """Wear contour of the groove."""
 
 SymmetricRollPass.Roll.groove_wear_cross_section = Hook[Polygon]()
@@ -63,8 +66,8 @@ def wear_radius(self: SymmetricRollPass.Roll):
         return 0
 
 
-@SymmetricRollPass.Roll.groove_wear_contour_line
-def groove_wear_contour(self: SymmetricRollPass.Roll):
+@SymmetricRollPass.Roll.groove_wear_contour_lines
+def groove_wear_contour_lines(self: SymmetricRollPass.Roll) -> MultiLineString:
     detachment_points: MultiPoint = MultiPoint([Point(self.roll_pass.out_profile.contact_lines.geoms[0].coords[0]),
                                                 Point(self.roll_pass.out_profile.contact_lines.geoms[0].coords[-1])])
     z_coordinates_wear_contour = np.arange(start=detachment_points.geoms[0].x, stop=detachment_points.geoms[1].x,
@@ -76,25 +79,28 @@ def groove_wear_contour(self: SymmetricRollPass.Roll):
 
     points = list(zip(z_coordinates_wear_contour, y_coordinates_wear_contour_shifted))
 
-    wear_contour_line = LineString(points)
+    upper_wear_contour_line = LineString(points)
+    lower_wear_contour_line = rotate(upper_wear_contour_line, angle=180, origin=(0, 0))
+    contur_lines = MultiLineString([upper_wear_contour_line, lower_wear_contour_line])
 
-    return wear_contour_line
+    return contur_lines
 
 
 @SymmetricRollPass.Roll.groove_wear_cross_section
 def groove_wear_cross_section(self: SymmetricRollPass.Roll):
-    upper_groove_contour_line = self.roll_pass.contour_lines.geoms[0]
-    wear_contour_line = self.groove_wear_contour_line
 
-    boundary = list(upper_groove_contour_line.coords) + list(reversed(wear_contour_line.coords))
-    poly = Polygon(boundary)
+    poly = []
+    for cl, wcl in zip(self.roll_pass.contour_lines.geoms, self.groove_wear_contour_lines.geoms):
+        boundary = list(cl.coords) + list(reversed(wcl.coords))
+        _poly = Polygon(boundary)
+        poly.append(_poly)
 
-    return poly
+    return MultiPolygon(poly)
 
 
 @SymmetricRollPass.Roll.max_wear_depth
 def max_wear_depth(self: SymmetricRollPass.Roll):
-    return self.groove.contour_line.distance(self.groove_wear_contour_line)
+    return self.groove.contour_line.distance(self.groove_wear_contour_lines.geoms[0])
 
 
 @SymmetricRollPass.Roll.wear_area
