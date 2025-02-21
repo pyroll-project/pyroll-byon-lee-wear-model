@@ -33,7 +33,7 @@ def test_solve_round_oval_round(tmp_path: Path, caplog):
                     shore_hardness=65
                 ),
                 gap=2e-3,
-                rolled_billets=20000,
+                rolled_billets=500,
 
             ),
 

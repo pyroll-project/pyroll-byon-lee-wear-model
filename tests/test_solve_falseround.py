@@ -8,6 +8,7 @@ from pyroll.core import Profile, PassSequence, RollPass, Roll, CircularOvalGroov
 def test_solve(tmp_path: Path, caplog):
     caplog.set_level(logging.DEBUG, logger="pyroll")
 
+    import pyroll.wusatowski_spreading
     import pyroll.byon_lee_wear_model
     import pyroll.profile_bulging
 
@@ -46,7 +47,7 @@ def test_solve(tmp_path: Path, caplog):
                 velocity=11.7,
                 gap=3.5e-3,
                 coulomb_friction_coefficient=0.4,
-                rolled_billets=20000,
+                rolled_billets=3000,
 
             ),
         ]

@@ -1,11 +1,14 @@
+import math
+
 import numpy as np
 
 from pyroll.core.hooks import Hook
 from pyroll.core import SymmetricRollPass, root_hooks
-from shapely.affinity import translate, rotate
+from shapely.affinity import rotate
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry.multipolygon import MultiPolygon
+from shapely.lib import clip_by_rect
 
 SymmetricRollPass.Roll.shore_hardness = Hook[float]()
 """Shore hardness of the roll material."""
@@ -34,6 +37,7 @@ SymmetricRollPass.Roll.max_wear_depth = Hook[float]()
 SymmetricRollPass.Roll.wear_area = Hook[float]()
 """Worn area of the groove."""
 
+
 @SymmetricRollPass.Roll.oval_round_wear_coefficient
 def default_byon_lee_wear_coefficient(self: SymmetricRollPass.Roll):
     return 35.9e-12
@@ -51,17 +55,23 @@ def wear_radius(self: SymmetricRollPass.Roll):
 
     def weight(correction_factor: float) -> float:
         return 1 - correction_factor * (
-                    (roll_pass.roll_force ** 2 * self.contact_length * roll_pass.rolled_billets) / self.shore_hardness)
+                (roll_pass.roll_force ** 2 * self.contact_length * roll_pass.rolled_billets) / self.shore_hardness)
 
     if "round" in in_profile.classifiers and "oval" in roll_pass.classifiers:
         weight = weight(self.round_oval_wear_coefficient)
-        radius = self.groove.r2 * weight + in_profile.equivalent_radius * (1 - weight)
-        return radius
+        if weight <= 0.75:  # Condition from Byon-Lee weight should be between 0.8 and 1
+            return 0
+        self.logger.debug(f"Weight function on Byon-Lee model for round - oval pass: {weight}.")
+        return self.groove.r2 * weight + in_profile.equivalent_radius * (1 - weight)
+
 
     elif "oval" in in_profile.classifiers and "round" in roll_pass.classifiers:
         weight = weight(self.oval_round_wear_coefficient)
-        radius = self.groove.r2 * weight + 0.75 * roll_pass.out_profile.bulge_radius * (1 - weight)
-        return radius
+        self.logger.debug(f"Weight function on Byon-Lee model for oval - round pass: {weight}.")
+        if weight <= 0.75:  # Condition from Byon-Lee weight should be between 0.8 and 1
+            return 0
+
+        return self.groove.r2 * weight + 0.75 * roll_pass.out_profile.bulge_radius * (1 - weight)
     else:
         return 0
 
@@ -72,6 +82,11 @@ def groove_wear_contour_lines(self: SymmetricRollPass.Roll) -> MultiLineString:
                                                 Point(self.roll_pass.out_profile.contact_lines.geoms[0].coords[-1])])
     z_coordinates_wear_contour = np.arange(start=detachment_points.geoms[0].x, stop=detachment_points.geoms[1].x,
                                            step=1e-6)
+
+    if self.wear_radius == 0:
+        self.logger.warning("Wear radius is 0 either pass-sequence unsuitable or model detected catastrophic wear.")
+        return self.roll_pass.contour_lines
+
     y_coordinates_wear_contour = np.sqrt(self.wear_radius ** 2 - z_coordinates_wear_contour ** 2)
     minimum_wear_distance = min(y_coordinates_wear_contour)
     y_coordinates_wear_contour_shifted = y_coordinates_wear_contour - minimum_wear_distance + detachment_points.geoms[
@@ -88,12 +103,12 @@ def groove_wear_contour_lines(self: SymmetricRollPass.Roll) -> MultiLineString:
 
 @SymmetricRollPass.Roll.groove_wear_cross_section
 def groove_wear_cross_section(self: SymmetricRollPass.Roll):
-
     poly = []
     for cl, wcl in zip(self.roll_pass.contour_lines.geoms, self.groove_wear_contour_lines.geoms):
         boundary = list(cl.coords) + list(reversed(wcl.coords))
         _poly = Polygon(boundary)
-        poly.append(_poly)
+        _clipped_poly = clip_by_rect(_poly, -self.roll_pass.out_profile.width / 2, -math.inf, self.roll_pass.out_profile.width / 2, math.inf)
+        poly.append(_clipped_poly)
 
     return MultiPolygon(poly)
 

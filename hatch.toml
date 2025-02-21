@@ -10,7 +10,8 @@ path = "pyroll/byon_lee_wear_model/__init__.py"
 path = ".venv"
 dependencies = [
     "pytest ~= 7.0",
-    "pyroll-report ~= 3.0.0"
+    "pyroll-report ~= 3.0.0",
+    "pyroll-wusatowski-spreading ~= 3.0.0"
 ]
 
 [envs.docs]
