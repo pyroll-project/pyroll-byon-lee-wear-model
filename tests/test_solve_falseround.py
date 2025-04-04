@@ -27,7 +27,8 @@ def test_solve(tmp_path: Path, caplog):
         density=7.5e3,
         flow_stress=100e6,
         specific_heat_capacity=690,
-        thermal_conductivity=23
+        thermal_conductivity=23,
+        length=12
     )
 
     sequence = PassSequence(
