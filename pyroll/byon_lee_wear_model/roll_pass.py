@@ -80,20 +80,19 @@ def wear_radius(self: SymmetricRollPass.Roll):
         return _weight
 
     if "round" in ip.classifiers and "oval" in rp.classifiers:
-        weight = weight(self.round_oval_wear_coefficient)
+        weight = weight(roll.round_oval_wear_coefficient)
+
         if weight <= 0.75:  # Condition from Byon-Lee weight should be between 0.8 and 1
             return 0
-        self.logger.debug(f"Weight function on Byon-Lee model for round - oval pass: {weight}.")
         _wear_radius = self.groove.r2 * weight + ip.equivalent_radius * (1 - weight)
         return _wear_radius
 
 
     elif "oval" in ip.classifiers and "round" in rp.classifiers:
-        weight = weight(self.oval_round_wear_coefficient)
-        self.logger.debug(f"Weight function on Byon-Lee model for oval - round pass: {weight}.")
+        weight = weight(roll.oval_round_wear_coefficient)
+
         if weight <= 0.75:  # Condition from Byon-Lee weight should be between 0.8 and 1
             return 0
-
         return self.groove.r2 * weight + 0.75 * rp.out_profile.bulge_radius * (1 - weight)
     else:
         return 0
@@ -113,17 +112,15 @@ def groove_wear_contour_lines(self: SymmetricRollPass.Roll) -> MultiLineString:
         self.logger.warning("Wear radius is 0 either pass-sequence unsuitable or model detected catastrophic wear.")
         return rp.contour_lines
 
-    y_coordinates_wear_contour = np.sqrt(self.wear_radius ** 2 - z_coordinates_wear_contour ** 2) + self.wear_radius_offset
+    y_coordinates_wear_radius = np.sqrt(self.wear_radius ** 2 - z_coordinates_wear_contour ** 2) + (self.wear_radius_offset - self.groove.r2 +self.roll_pass.height /2)
+    y_coordinates_r2 = np.sqrt(self.groove.r2 ** 2 - z_coordinates_wear_contour ** 2)
 
-    points = list(zip(z_coordinates_wear_contour, y_coordinates_wear_contour))
+    y_coordinates_wear_contour = (y_coordinates_wear_radius - y_coordinates_r2)
+    points = list(zip(z_coordinates_wear_contour, y_coordinates_wear_radius))
 
     upper_wear_contour_line = LineString(points)
-
-    offset = self.roll_pass.contour_lines.geoms[0].distance(upper_wear_contour_line)
-    moved_upper_wear_contour_line = translate(upper_wear_contour_line, xoff=0, yoff=-offset)
-
-    lower_wear_contour_line = rotate(moved_upper_wear_contour_line, angle=180, origin=(0, 0))
-    contur_lines = MultiLineString([moved_upper_wear_contour_line, lower_wear_contour_line])
+    lower_wear_contour_line = rotate(upper_wear_contour_line, angle=180, origin=(0, 0))
+    contur_lines = MultiLineString([upper_wear_contour_line, lower_wear_contour_line])
 
     return contur_lines
 

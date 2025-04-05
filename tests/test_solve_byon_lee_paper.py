@@ -1,15 +1,7 @@
 import logging
 import webbrowser
-import numpy as np
 from pathlib import Path
 from pyroll.core import Profile, Roll, RollPass, CircularOvalGroove, PassSequence, DeformationUnit
-
-
-#@DeformationUnit.Profile.flow_stress
-#def flow_stress_lee(self: DeformationUnit):
-#    strain = self.strain + 0.05
-#    strain_rate = self.unit.strain_rate + 0.05
-#    return (150 * (1.658 * strain ** 0.403 - self.strain) * strain_rate ** 0.116) * 1e6
 
 
 def test_solve_round_oval_round(tmp_path: Path, caplog):

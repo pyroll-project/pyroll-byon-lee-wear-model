@@ -15,7 +15,7 @@ def test_solve_round_oval_round(tmp_path: Path, caplog):
         temperature=1200 + 273.15,
         strain=0,
         material=["C20", "steel"],
-        flow_stress = 100e6,
+        flow_stress=100e6,
         length=12
     )
 
@@ -35,8 +35,7 @@ def test_solve_round_oval_round(tmp_path: Path, caplog):
                 ),
                 gap=2e-3,
                 rolled_billets=500,
-
-            ),
+            )
 
         ]
     )
