@@ -12,7 +12,8 @@ dependencies = [
     "pytest ~= 7.0",
     "pyroll-report ~= 3.0",
     "pyroll-wusatowski-spreading ~= 3.0",
-    "pyroll-lendl-equivalent-method ~= 3.0"
+    "pyroll-lendl-equivalent-method ~= 3.0",
+    "pyroll-hensel-force-torque"
 ]
 
 [envs.docs]

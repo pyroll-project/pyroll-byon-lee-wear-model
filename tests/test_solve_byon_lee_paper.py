@@ -7,10 +7,11 @@ from pyroll.core import Profile, Roll, RollPass, CircularOvalGroove, PassSequenc
 def test_solve_round_oval_round(tmp_path: Path, caplog):
     caplog.set_level(logging.DEBUG, logger="pyroll")
 
-    import pyroll.byon_lee_wear_model
     import pyroll.lendl_equivalent_method
     import pyroll.wusatowski_spreading
-    import pyroll.profile_bulging
+    import pyroll.hensel_force_torque
+    import pyroll.byon_lee_wear_model
+
 
     in_profile = Profile.round(
         diameter=60e-3,
@@ -18,7 +19,7 @@ def test_solve_round_oval_round(tmp_path: Path, caplog):
         strain=0,
         material=["C10", "steel"],
         flow_stress=100e6,
-        length=0.3
+        length=12
     )
 
     sequence = PassSequence(
@@ -37,7 +38,7 @@ def test_solve_round_oval_round(tmp_path: Path, caplog):
                     shore_hardness=65
                 ),
                 gap=6.5e-3,
-                rolled_billets=4,
+                rolled_billets=1500,
 
             )
         ]
